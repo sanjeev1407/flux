@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+
+<precice-configuration>
+
+  <solver-interface dimensions="2">
+    
+    <data:scalar name="Sigma" />
+    <data:scalar name="JouleHeating" />
+    <data:vector name="LorentzForce" />
+    
+    <mesh name="flux_volume_mesh">
+      <use-data name="Sigma"/>
+      <use-data name="JouleHeating"/>
+      <use-data name="LorentzForce"/>
+    </mesh>
+
+    <mesh name="DummyMesh">
+      <use-data name="Sigma"/>
+      <use-data name="JouleHeating"/>
+      <use-data name="LorentzForce"/>
+    </mesh>
+
+    <participant name="FLUX">
+      <use-mesh name="flux_volume_mesh" provide="yes" />
+      <use-mesh name="DummyMesh" from="DummySolver" />
+      <read-data  name="Sigma" mesh="flux_volume_mesh" />
+      <write-data  name="JouleHeating" mesh="flux_volume_mesh" />
+      <write-data  name="LorentzForce" mesh="flux_volume_mesh" />
+      <mapping:nearest-neighbor direction="read" from="DummyMesh" to="flux_volume_mesh" constraint="consistent"/>
+    </participant>
+
+    <participant name="DummySolver">
+      <use-mesh name="DummyMesh" provide="yes"/>
+      <use-mesh name="flux_volume_mesh" from="FLUX" />
+      <write-data name="Sigma" mesh="DummyMesh" />
+      <read-data  name="JouleHeating" mesh="DummyMesh" />
+      <read-data  name="LorentzForce" mesh="DummyMesh" />
+      <mapping:nearest-neighbor direction="read" from="flux_volume_mesh" to="DummyMesh" constraint="consistent"/>
+    </participant>
+
+    <m2n:sockets from="DummySolver" to="FLUX" />
+
+    <coupling-scheme:serial-explicit>
+      <participants first="DummySolver" second="FLUX" />
+      <max-time value="10.0"/>
+      <time-window-size method="first-participant"/>
+      <exchange data="Sigma" mesh="DummyMesh" from="DummySolver" to="FLUX"/>
+      <exchange data="JouleHeating" mesh="flux_volume_mesh" from="FLUX" to="DummySolver"/>
+      <exchange data="LorentzForce" mesh="flux_volume_mesh" from="FLUX" to="DummySolver"/>
+    </coupling-scheme:serial-explicit>
+
+  </solver-interface>
+
+</precice-configuration>
